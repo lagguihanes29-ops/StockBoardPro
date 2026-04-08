@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Login — StockBoard Pro</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="icon-board">🪵</div>
+      <div class="company-name">StockBoard Pro</div>
+      <div class="system-name">Laminated Boards Dealer — Inventory System</div>
+    </div>
+    <div class="flash flash-err" id="errMsg" style="display:none;">⛔ Incorrect username or password.</div>
+    <form id="loginForm">
+      <label for="un">Username</label>
+      <input id="un" type="text" class="form-control" placeholder="Enter username" autofocus autocomplete="username"/>
+      <div style="position:relative; margin-bottom:.85rem;">
+        <input id="pw" type="password" class="form-control" placeholder="Enter password" autocomplete="current-password" required style="padding-right: 40px; margin-bottom: 0;"/>
+        <span id="togglePw" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); cursor:pointer; user-select:none; opacity:0.6; display:flex; align-items:center; color:var(--text-muted);">
+          <svg id="iconClosed" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+          <svg id="iconOpen" style="display:none;" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        </span>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full" style="margin-top:.4rem">Sign In →</button>
+    </form>
+    <div style="margin-top:1.2rem;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:7px;padding:.65rem .8rem;font-size:.76rem;color:#93c5fd;">
+      <strong>Demo credentials</strong><br>
+      Admin: <code>admin</code> / <code>admin123</code>
+    </div>
+</div>
+<script>
+  const USERS = { admin:{pass:'admin123',dest:'dashboard.html'} };
+  document.getElementById('loginForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const u = document.getElementById('un').value.trim(), p = document.getElementById('pw').value;
+    const err = document.getElementById('errMsg');
+    if (USERS[u] && USERS[u].pass === p) window.location.href = USERS[u].dest;
+    else err.style.display = '';
+  });
+
+  document.getElementById('togglePw').addEventListener('click', function() {
+    const pw = document.getElementById('pw');
+    const iconClosed = document.getElementById('iconClosed');
+    const iconOpen = document.getElementById('iconOpen');
+    if (pw.type === 'password') {
+      pw.type = 'text';
+      iconClosed.style.display = 'none';
+      iconOpen.style.display = 'block';
+      this.style.opacity = '1';
+    } else {
+      pw.type = 'password';
+      iconClosed.style.display = 'block';
+      iconOpen.style.display = 'none';
+      this.style.opacity = '0.6';
+    }
+  });
+</script>
+</body>
+</html>

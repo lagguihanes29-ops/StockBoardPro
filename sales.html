@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Sales — StockBoard Pro</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <div class="layout">
+    <nav class="sidebar">
+      <div class="sidebar-brand">
+        <div class="company">🪵 StockBoard Pro</div>
+        <div class="tagline">Laminated Boards Dealer</div><span class="badge-role">Admin</span>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-group-label">Overview</div>
+        <a href="dashboard.html" class="nav-link"><span class="icon">🏠</span><span>Dashboard</span></a>
+        <a href="inventory.html" class="nav-link"><span class="icon">📦</span><span>Inventory</span></a>
+        <div class="nav-group-label" style="margin-top:.5rem">Sales</div>
+        <a href="sales.html" class="nav-link active"><span class="icon">🛒</span><span>Sales</span></a>
+        <div class="nav-group-label" style="margin-top:.5rem">Analytics</div>
+        <a href="reports.html" class="nav-link"><span class="icon">📊</span><span>Reports</span></a>
+        <a href="prediction.html" class="nav-link"><span class="icon">🔮</span><span>Prediction</span></a>
+      </div>
+      <div class="sidebar-bottom">
+        <div class="user-row">
+          <div class="avatar">A</div>
+          <div class="user-details">
+            <div class="uname">Admin</div>
+            <div class="urole">Admin</div>
+          </div>
+        </div>
+        <a href="login.html" class="btn-signout" onclick="return confirm('Are you sure you want to log out?');">🚪 Sign
+          Out</a>
+      </div>
+    </nav>
+
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Sales</div>
+          <div class="topbar-sub">Record board sales and view history</div>
+        </div>
+      </div>
+      <div class="page-body">
+
+        <div id="flash" class="flash flash-ok hidden"></div>
+
+        <!-- NEW SALE FORM -->
+        <div class="card mb-2">
+          <div class="card-title">🛒 New Sale Entry</div>
+
+          <div class="form-grid-2" style="align-items:end;">
+            <div class="form-group">
+              <label>Product Name *</label>
+              <select id="prodSel" class="form-control" onchange="fillProduct()">
+                <option value="">— Select product —</option>
+              </select>
+            </div>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label>Thickness</label>
+                <input type="text" id="dispTh" class="form-control" readonly style="background:var(--surface);"
+                  placeholder="Auto-filled" />
+              </div>
+              <div class="form-group">
+                <label>Size</label>
+                <input type="text" id="dispSz" class="form-control" readonly style="background:var(--surface);"
+                  placeholder="Auto-filled" />
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid-3" style="align-items:end;">
+            <div class="form-group">
+              <label>Quantity * <span id="qtyUnit" class="muted" style="font-size:0.8rem;"></span></label>
+              <input type="number" id="qty" class="form-control" min="1" placeholder="0" oninput="calcTotal()" />
+            </div>
+            <div class="form-group">
+              <label>Price per unit (₱) <span style="color:var(--accent-lt);font-size:.72rem;">(editable)</span></label>
+              <input type="number" step="0.01" id="ppu" class="form-control" placeholder="0.00" oninput="calcTotal()" />
+            </div>
+            <div class="form-group">
+              <label>Line Total (₱)</label>
+              <div id="lineTotal" style="font-size:1.15rem;font-weight:700;color:#4ade80;padding:.52rem 0;">₱0.00</div>
+            </div>
+          </div>
+
+          <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+            <button class="btn btn-success" onclick="addToCart()">+ Add to Sale</button>
+            <span class="muted" style="font-size:.8rem;align-self:center;">Add multiple products before
+              submitting.</span>
+          </div>
+
+          <!-- CART TABLE -->
+          <div id="cartBox" class="items-box hidden">
+            <table id="cartTbl">
+              <thead>
+                <tr>
+                  <th>Product Name</th>
+                  <th>Color/Design</th>
+                  <th>Thickness</th>
+                  <th>Size</th>
+                  <th>Qty</th>
+                  <th>Unit</th>
+                  <th>Price/unit (₱)</th>
+                  <th>Total (₱)</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="cartBody"></tbody>
+              <tfoot>
+                <tr class="fw7">
+                  <td colspan="7" class="tr" style="padding:.6rem .9rem;">Grand Total:</td>
+                  <td id="grandTotal" style="padding:.6rem .9rem;color:#4ade80;">₱0.00</td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <div class="form-grid-3" style="margin-top:.75rem;">
+            <div class="form-group">
+              <label>Sale Date</label>
+              <input type="date" id="saleDate" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label>Invoice/Receipt No. *</label>
+              <input type="text" id="saleInv" class="form-control" placeholder="e.g. INV-2026-001" required />
+            </div>
+            <div class="form-group">
+              <label>Notes (optional)</label>
+              <input type="text" id="saleNotes" class="form-control" placeholder="e.g. Walk-in customer" />
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="submitSale()">✅ Submit Sale</button>
+        </div>
+
+        <!-- RECENT SALES -->
+        <div class="card">
+          <div class="card-title">📄 Recent Sales History</div>
+          <div class="toolbar mb-2">
+            <div class="toolbar-left">
+              <input type="text" id="saleSrch" class="search-box"
+                placeholder="🔍 Search invoice, product, date, notes…" />
+            </div>
+            <div class="toolbar-right">
+              <span class="muted" style="font-size:.82rem;">Total: <strong class="green"
+                  id="revTotal">₱0.00</strong></span>
+            </div>
+          </div>
+          <div class="tbl-wrap">
+            <table id="saleTbl">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Invoice No.</th>
+                  <th>Date</th>
+                  <th>Product Name</th>
+                  <th>Category</th>
+                  <th>Color/Design</th>
+                  <th>Thickness</th>
+                  <th>Size</th>
+                  <th>Qty</th>
+                  <th>Unit</th>
+                  <th>Price/unit (₱)</th>
+                  <th>Total (₱)</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="saleBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT SALE MODAL -->
+  <div class="overlay" id="editSaleModal">
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-header">
+        <div class="modal-title">Edit Sale Item — <span id="esName"></span></div>
+        <button class="modal-close"
+          onclick="document.getElementById('editSaleModal').classList.remove('open')">✕</button>
+      </div>
+      <input type="hidden" id="esId" />
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Quantity (pcs) *</label>
+          <input type="number" id="esQty" class="form-control" min="1" required />
+        </div>
+        <div class="form-group">
+          <label>Price per piece (₱) *</label>
+          <input type="number" step="0.01" min="0" id="esPrice" class="form-control" required />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost"
+          onclick="document.getElementById('editSaleModal').classList.remove('open')">Cancel</button>
+        <button class="btn btn-success" onclick="saveEditSale()">✅ Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/mock.js"></script>
+  <script>
+    let PRODUCTS = window.db.getProducts();
+    let sales = window.db.getSales();
+    let cart = [];
+
+    // Set today's date as default for sale date
+    document.getElementById('saleDate').value = new Date().toISOString().slice(0, 10);
+
+    // Populate product select
+    const sel = document.getElementById('prodSel');
+    Object.entries(PRODUCTS).forEach(([id, p]) => {
+      const o = document.createElement('option'); o.value = id;
+      o.textContent = p.name + (p.cd ? ' — ' + p.cd : '') + ' (' + (p.cat || '') + ')';
+      sel.appendChild(o);
+    });
+
+    function fmt(n) { return '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: 2 }); }
+
+    function fillProduct() {
+      const pid = document.getElementById('prodSel').value;
+      if (pid && PRODUCTS[pid]) {
+        const p = PRODUCTS[pid];
+        document.getElementById('dispTh').value = p.th || '';
+        document.getElementById('dispSz').value = p.sz || '';
+        document.getElementById('qtyUnit').textContent = '(' + (p.un || 'pcs') + ')';
+        document.getElementById('ppu').value = p.price.toFixed(2);
+        calcTotal();
+      }
+      else {
+        document.getElementById('dispTh').value = ''; document.getElementById('dispSz').value = '';
+        document.getElementById('qtyUnit').textContent = '';
+        document.getElementById('ppu').value = ''; document.getElementById('lineTotal').textContent = '₱0.00';
+      }
+    }
+    function calcTotal() {
+      const q = parseFloat(document.getElementById('qty').value) || 0;
+      const p = parseFloat(document.getElementById('ppu').value) || 0;
+      document.getElementById('lineTotal').textContent = fmt(q * p);
+    }
+
+    function addToCart() {
+      const pid = document.getElementById('prodSel').value;
+      const qty = parseInt(document.getElementById('qty').value);
+      const ppu = parseFloat(document.getElementById('ppu').value);
+      if (!pid) { alert('Select a product.'); return; }
+      if (!qty || qty < 1) { alert('Enter a valid quantity.'); return; }
+      if (!ppu || ppu <= 0) { alert('Enter a valid price per piece.'); return; }
+      const p = PRODUCTS[pid];
+      if (qty > p.stock) { alert('Only ' + p.stock + ' pcs in stock for ' + p.name); return; }
+      const ex = cart.find(c => c.pid === pid);
+      if (ex) { ex.qty += qty; ex.ppu = ppu; }
+      else cart.push({ pid, name: p.name, cat: p.cat, cd: p.cd || '', th: p.th, sz: p.sz, un: p.un || 'pcs', qty, ppu });
+      renderCart();
+      document.getElementById('prodSel').value = '';
+      document.getElementById('dispTh').value = ''; document.getElementById('dispSz').value = '';
+      document.getElementById('qtyUnit').textContent = '';
+      document.getElementById('qty').value = ''; document.getElementById('ppu').value = '';
+      document.getElementById('lineTotal').textContent = '₱0.00';
+    }
+
+    function renderCart() {
+      const tbody = document.getElementById('cartBody'); tbody.innerHTML = ''; let grand = 0;
+      cart.forEach(c => {
+        const t = c.qty * c.ppu; grand += t;
+        tbody.insertAdjacentHTML('beforeend', `
+      <tr><td class="fw7">${c.name}</td><td>${c.cd || '—'}</td><td>${c.th || '—'}</td><td>${c.sz || '—'}</td>
+      <td>${c.qty}</td><td><span class="muted">${c.un}</span></td><td>${fmt(c.ppu)}</td><td class="green">${fmt(t)}</td>
+      <td><button class="btn btn-danger btn-sm" onclick="removeItem('${c.pid}')">✕</button></td></tr>`);
+      });
+      document.getElementById('grandTotal').textContent = fmt(grand);
+      document.getElementById('cartBox').classList.toggle('hidden', cart.length === 0);
+    }
+
+    function removeItem(pid) { cart = cart.filter(c => c.pid !== pid); renderCart(); }
+
+    function submitSale() {
+      if (cart.length === 0) { alert('Add at least one item.'); return; }
+      const date = document.getElementById('saleDate').value;
+      const inv = document.getElementById('saleInv').value.trim();
+      const notes = document.getElementById('saleNotes').value.trim();
+      if (!date) { alert('Please select a sale date.'); return; }
+      if (!inv) { alert('Please enter Invoice/Receipt No.'); return; }
+      let nextId = window.db.getNextSaleId(cart.length);  // reserve IDs for all items
+      cart.forEach(c => {
+        sales.unshift({ id: nextId++, inv, date, notes, name: c.name, cat: c.cat, cd: c.cd || '', th: c.th, sz: c.sz, un: c.un, qty: c.qty, ppu: c.ppu, total: c.qty * c.ppu });
+        PRODUCTS[c.pid].stock -= c.qty;
+      });
+      window.db.saveProducts(PRODUCTS);
+      window.db.saveSales(sales);
+      showFlash('Sale submitted! Total: ' + fmt(cart.reduce((a, c) => a + c.qty * c.ppu, 0)));
+      document.getElementById('saleInv').value = '';
+      document.getElementById('saleNotes').value = '';
+      cart = []; renderCart(); renderSales();
+    }
+
+    function renderSales() {
+      const q = document.getElementById('saleSrch').value.toLowerCase();
+      const tbody = document.getElementById('saleBody'); tbody.innerHTML = ''; let rev = 0;
+      const lower = str => (str || '').toString().toLowerCase();
+      sales.forEach(s => {
+        const searchable = `${s.id} ${lower(s.inv)} ${lower(s.date)} ${lower(s.name)} ${lower(s.cd)} ${lower(s.cat)} ${lower(s.notes)}`;
+        if (q && !searchable.includes(q)) return;
+        rev += s.total;
+        const notesHtml = s.notes ? `<br><span class="muted" style="font-size:0.75rem">${s.notes}</span>` : '';
+        tbody.insertAdjacentHTML('beforeend', `<tr>
+      <td class="muted">${s.id}</td><td class="fw7">${s.inv || '—'}</td><td>${s.date}${notesHtml}</td>
+      <td class="fw7">${s.name}</td><td><span class="muted" style="font-size:0.85rem">${s.cat}</span></td><td>${s.cd || '—'}</td><td>${s.th || '—'}</td><td>${s.sz || '—'}</td>
+      <td>${s.qty}</td><td><span class="muted">${s.un || 'pcs'}</span></td><td>${fmt(s.ppu)}</td><td class="green fw7">${fmt(s.total)}</td>
+      <td>
+        <button class="btn btn-ghost btn-sm" onclick="openEditSale(${s.id}, ${s.qty}, ${s.ppu}, '${s.name.replace(/'/g, "\\'")}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteSale(${s.id})">🗑</button>
+      </td></tr>`);
+      });
+      document.getElementById('revTotal').textContent = fmt(rev);
+    }
+
+    function openEditSale(id, qty, price, name) {
+      document.getElementById('esId').value = id;
+      document.getElementById('esQty').value = qty;
+      document.getElementById('esPrice').value = price;
+      document.getElementById('esName').textContent = name;
+      document.getElementById('editSaleModal').classList.add('open');
+    }
+
+    function saveEditSale() {
+      const id = parseInt(document.getElementById('esId').value);
+      const nQty = parseInt(document.getElementById('esQty').value);
+      const nPrice = parseFloat(document.getElementById('esPrice').value);
+
+      if (!nQty || nQty < 1) { alert('Invalid quantity.'); return; }
+      if (isNaN(nPrice) || nPrice < 0) { alert('Invalid price.'); return; }
+
+      const sIndex = sales.findIndex(x => x.id === id);
+      if (sIndex > -1) {
+        const s = sales[sIndex];
+        // We would need product pid to adjust stock properly in mock:
+        // For simplicity in mock, just adjust sale item.
+        s.qty = nQty;
+        s.ppu = nPrice;
+        s.total = nQty * nPrice;
+        window.db.saveSales(sales);
+        renderSales();
+        document.getElementById('editSaleModal').classList.remove('open');
+        showFlash('Sale item updated.');
+      }
+    }
+
+    function deleteSale(id) {
+      if (!confirm('Are you sure you want to delete this sale? Stock and analytics will be updated.')) return;
+      const sIndex = sales.findIndex(x => x.id === id);
+      if (sIndex > -1) {
+        sales.splice(sIndex, 1);
+        window.db.saveSales(sales);
+        renderSales();
+        showFlash('Sale item deleted. Analytics updated.');
+      }
+    }
+
+    function showFlash(msg) { const el = document.getElementById('flash'); el.textContent = '✅ ' + msg; el.classList.remove('hidden'); setTimeout(() => el.classList.add('hidden'), 4000); }
+    document.getElementById('saleSrch').addEventListener('input', renderSales);
+    renderSales();
+  </script>
+</body>
+
+</html>

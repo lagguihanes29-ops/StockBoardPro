@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Dashboard — StockBoard Pro</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-brand">
+        <div class="company">🪵 StockBoard Pro</div>
+        <div class="tagline">Laminated Boards Dealer</div>
+        <span class="badge-role">Admin</span>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-group-label">Overview</div>
+        <a href="dashboard.html" class="nav-link active"><span class="icon">🏠</span><span>Dashboard</span></a>
+        <a href="inventory.html" class="nav-link"><span class="icon">📦</span><span>Inventory</span></a>
+        <div class="nav-group-label" style="margin-top:.5rem">Sales</div>
+        <a href="sales.html" class="nav-link"><span class="icon">🛒</span><span>Sales</span></a>
+        <div class="nav-group-label" style="margin-top:.5rem">Analytics</div>
+        <a href="reports.html" class="nav-link"><span class="icon">📊</span><span>Reports</span></a>
+        <a href="prediction.html" class="nav-link"><span class="icon">🔮</span><span>Prediction</span></a>
+      </div>
+      <div class="sidebar-bottom">
+        <div class="user-row">
+          <div class="avatar">A</div>
+          <div class="user-details">
+            <div class="uname">Admin</div>
+            <div class="urole">Admin</div>
+          </div>
+        </div>
+        <a href="login.html" class="btn-signout" onclick="return confirm('Are you sure you want to log out?');">🚪 Sign
+          Out</a>
+      </div>
+    </nav>
+
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Dashboard</div>
+          <div class="topbar-sub">Overview of your laminated boards inventory</div>
+        </div>
+        <div class="topbar-meta" id="todayLabel"></div>
+      </div>
+      <div class="page-body">
+
+        <!-- STAT CARDS -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <div class="sc-icon">🪵</div>
+            <div>
+              <div class="sc-val" id="stTypes">7</div>
+              <div class="sc-lbl">Total Products</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-icon">💰</div>
+            <div>
+              <div class="sc-val green" id="stRev">₱0.00</div>
+              <div class="sc-lbl">Today's Revenue</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-icon">⚠️</div>
+            <div>
+              <div class="sc-val red" id="stLow">0</div>
+              <div class="sc-lbl">Low-Stock Types</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="sc-icon">🏆</div>
+            <div>
+              <div class="sc-val" id="stBest" style="font-size:.95rem;">-</div>
+              <div class="sc-lbl">Best-Selling Product</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHARTS & FILTERS -->
+        <div class="toolbar mb-2">
+          <div class="toolbar-left">
+            <div class="tab-row" style="margin-bottom:0;">
+              <button type="button" class="tab-btn" data-period="daily">Daily</button>
+              <button type="button" class="tab-btn" data-period="weekly">Weekly</button>
+              <button type="button" class="tab-btn active" data-period="monthly">Monthly</button>
+              <button type="button" class="tab-btn" data-period="yearly">Yearly</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="charts-row mb-2">
+          <div class="card">
+            <div class="card-title">📈 Sales Trend — <span id="trendLabel">Monthly</span></div>
+            <canvas id="trendChart"></canvas>
+          </div>
+          <div class="card">
+            <div class="card-title">🗂️ Sales by Category</div>
+            <canvas id="pieChart"></canvas>
+          </div>
+        </div>
+
+        <!-- LOW STOCK PANEL -->
+        <div class="card">
+          <div class="card-title">⚠️ Low-Stock Alerts</div>
+          <div class="tbl-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Board Code</th>
+                  <th>Color/Design</th>
+                  <th>Thickness</th>
+                  <th>Size</th>
+                  <th>Current Stock</th>
+                  <th>Threshold</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="lowBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <script src="js/chart.umd.min.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/mock.js"></script>
+  <script>
+    const PAL = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#be185d'];
+    const PRODUCTS = window.db.getProducts();
+    const sales = window.db.getSales();
+
+    // ── Helpers ───────────────────────────────────────────────────────
+    function fmtDate(d) {
+      return d.toLocaleDateString('en-PH', { month: 'short', day: 'numeric' });
+    }
+    function isoDate(d) {
+      return d.toISOString().slice(0, 10);
+    }
+
+    // ── Today label ──────────────────────────────────────────────────
+    const now = new Date();
+    document.getElementById('todayLabel').textContent =
+      now.toLocaleDateString('en-PH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    // ── Build last-7-days date array ─────────────────────────────────
+    const last7 = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      last7.push(isoDate(d));
+    }
+
+    // ── Aggregate sales into buckets ──────────────────────────────────
+    const revByDay = {};  // ISO date → total revenue
+    const catMap = {};  // category  → revenue (last 7 days)
+    const boardSales = {}; // board name → qty   (all time, for best-seller)
+    let todayRev = 0;
+    const todayStr = isoDate(now);
+
+    last7.forEach(d => revByDay[d] = 0);  // pre-fill with 0
+
+    sales.forEach(s => {
+      // best seller (all time)
+      boardSales[s.name] = (boardSales[s.name] || 0) + s.qty;
+      // per-day revenue for trend chart
+      if (revByDay.hasOwnProperty(s.date)) {
+        revByDay[s.date] += s.total;
+      }
+      // category breakdown (last 7 days only)
+      if (last7.includes(s.date)) {
+        catMap[s.cat] = (catMap[s.cat] || 0) + s.total;
+      }
+      // today's revenue
+      if (s.date === todayStr) todayRev += s.total;
+    });
+
+    // ── Low-stock panel ───────────────────────────────────────────────
+    let lowCount = 0;
+    const lowBody = document.getElementById('lowBody');
+    Object.values(PRODUCTS).forEach(p => {
+      const thr = p.thr || 5;
+      if (p.stock <= thr) {
+        lowCount++;
+        const unit = p.un || 'pcs';
+        lowBody.insertAdjacentHTML('beforeend', `
+      <tr><td class="fw7">${p.name}</td><td>${p.cd || '—'}</td><td>${p.th || '—'}</td><td>${p.sz || '—'}</td>
+      <td class="red fw7">${p.stock} ${unit}</td><td>${thr} ${unit}</td><td><span class="badge b-low">LOW STOCK</span></td></tr>
+    `);
+      }
+    });
+
+    // ── Best seller ───────────────────────────────────────────────────
+    let bestName = '-'; let maxQty = 0;
+    Object.entries(boardSales).forEach(([k, v]) => { if (v > maxQty) { maxQty = v; bestName = k; } });
+
+    // ── Stat cards ────────────────────────────────────────────────────
+    document.getElementById('stTypes').textContent = Object.keys(PRODUCTS).length;
+    document.getElementById('stRev').textContent = '₱' + todayRev.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+    document.getElementById('stLow').textContent = lowCount;
+    document.getElementById('stBest').textContent = bestName;
+
+    // ── Mock Logic for Tabs ───────────────────────────────────────────
+    function renderMockCharts(p = 'monthly') {
+      document.getElementById('trendLabel').textContent = p.charAt(0).toUpperCase() + p.slice(1);
+
+      let labels = [];
+      let values = [];
+
+      if (p === 'daily') {
+        labels = ['Mar 27', 'Mar 28', 'Mar 29', 'Mar 30', 'Mar 31', 'Apr 1', 'Apr 2'];
+        values = [12500, 18400, 0, 9200, 21000, 15600, 8400];
+      } else if (p === 'weekly') {
+        labels = ['Week 10', 'Week 11', 'Week 12', 'Week 13'];
+        values = [85000, 92000, 78000, 105000];
+      } else if (p === 'monthly') {
+        labels = ['Jan', 'Feb', 'Mar', 'Apr'];
+        values = [320000, 285000, 410000, 95000];
+      } else {
+        labels = ['2024', '2025', '2026'];
+        values = [2800000, 3500000, 1100000];
+      }
+
+      renderLine('trendChart', labels, values, { label: 'Revenue (₱)', color: '#2563eb' });
+
+      const cats = ['11PLY MARINE', 'COMPACT MARINE', 'LAMINATED PLYBOARD', 'PETG HIGH GLOSS', 'UV GLOSS', '6MM BACKING', 'EDGEBAND'];
+      const catVals = cats.map(() => Math.floor(Math.random() * 50000) + 10000);
+      renderPie('pieChart', cats, catVals, PAL);
+    }
+
+    document.querySelectorAll('.tab-btn[data-period]').forEach(btn => {
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.tab-btn[data-period]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        renderMockCharts(this.dataset.period);
+      });
+    });
+
+    renderMockCharts('monthly');
+
+    // Auto-refresh when a sale is submitted from another tab
+    window.addEventListener('storage', () => location.reload());
+  </script>
+</body>
+
+</html>

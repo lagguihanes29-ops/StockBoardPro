@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Inventory — StockBoard Pro</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+      <div class="sidebar-brand">
+        <div class="company">🪵 StockBoard Pro</div>
+        <div class="tagline">Laminated Boards Dealer</div><span class="badge-role">Admin</span>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-group-label">Overview</div>
+        <a href="dashboard.html" class="nav-link"><span class="icon">🏠</span><span>Dashboard</span></a>
+        <a href="inventory.html" class="nav-link active"><span class="icon">📦</span><span>Inventory</span></a>
+        <div class="nav-group-label" style="margin-top:.5rem">Sales</div>
+        <a href="sales.html" class="nav-link"><span class="icon">🛒</span><span>Sales</span></a>
+        <div class="nav-group-label" style="margin-top:.5rem">Analytics</div>
+        <a href="reports.html" class="nav-link"><span class="icon">📊</span><span>Reports</span></a>
+        <a href="prediction.html" class="nav-link"><span class="icon">🔮</span><span>Prediction</span></a>
+      </div>
+      <div class="sidebar-bottom">
+        <div class="user-row">
+          <div class="avatar">A</div>
+          <div class="user-details">
+            <div class="uname">Admin</div>
+            <div class="urole">Admin</div>
+          </div>
+        </div>
+        <a href="login.html" class="btn-signout" onclick="return confirm('Are you sure you want to log out?');">🚪 Sign
+          Out</a>
+      </div>
+    </nav>
+
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Inventory</div>
+          <div class="topbar-sub">Manage laminated board products and stock levels</div>
+        </div>
+      </div>
+      <div class="page-body">
+
+        <div id="flash" class="flash flash-ok hidden"></div>
+
+        <!-- TOOLBAR -->
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <input type="text" id="srch" class="search-box" placeholder="🔍  Search product…" />
+            <select id="catF" class="filter-sel">
+              <option value="">All Categories</option>
+              <option value="11PLY SOLID MARINE">11PLY SOLID MARINE</option>
+              <option value="COMPACT MARINE">COMPACT MARINE</option>
+              <option value="LAMINATED PLYBOARD">LAMINATED PLYBOARD</option>
+              <option value="PETG HIGH GLOSS">PETG HIGH GLOSS</option>
+              <option value="UV GLOSS">UV GLOSS</option>
+              <option value="UV MARBLE">UV MARBLE</option>
+              <option value="6MM BACKING">6MM BACKING</option>
+              <option value="EDGEBAND">EDGEBAND</option>
+              <option value="EDGEBAND GLOSS">EDGEBAND GLOSS</option>
+            </select>
+            <select id="stF" class="filter-sel">
+              <option value="">All Status</option>
+              <option value="OK">OK</option>
+              <option value="Warning">Warning</option>
+              <option value="Low">Low Stock</option>
+            </select>
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-primary" onclick="openAdd()">+ Add Product</button>
+          </div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="tbl-wrap">
+          <table id="prodTbl">
+            <thead>
+              <tr>
+                <th>Product Name</th>
+                <th>Category</th>
+                <th>Color/Design</th>
+                <th>Thickness</th>
+                <th>Size</th>
+                <th>Unit</th>
+                <th>Stock</th>
+                <th>Cost (₱)</th>
+                <th>Selling Price/Unit (₱)</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="tblBody"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD / EDIT MODAL -->
+  <div class="overlay" id="prodModal">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <div class="modal-title" id="mTitle">Add Product</div>
+        <button class="modal-close" onclick="close_('prodModal')">✕</button>
+      </div>
+      <div class="form-group">
+        <label>Product Name *</label>
+        <input type="text" id="f_bt" class="form-control" placeholder="e.g. PETG High Gloss 18mm" />
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Category *</label>
+          <select id="f_cat" class="form-control"
+            onchange="document.getElementById('f_new_cat').style.display = this.value === 'new' ? 'block' : 'none'; document.getElementById('f_new_cat').required = this.value === 'new';">
+            <option value="11PLY SOLID MARINE">11PLY SOLID MARINE</option>
+            <option value="COMPACT MARINE">COMPACT MARINE</option>
+            <option value="LAMINATED PLYBOARD">LAMINATED PLYBOARD</option>
+            <option value="PETG HIGH GLOSS">PETG HIGH GLOSS</option>
+            <option value="UV GLOSS">UV GLOSS</option>
+            <option value="UV MARBLE">UV MARBLE</option>
+            <option value="6MM BACKING">6MM BACKING</option>
+            <option value="EDGEBAND">EDGEBAND</option>
+            <option value="EDGEBAND GLOSS">EDGEBAND GLOSS</option>
+            <option value="new">➕ Add New Category</option>
+          </select>
+          <input type="text" id="f_new_cat" class="form-control" style="display:none; margin-top:0.5rem;"
+            placeholder="New Category Name" />
+        </div>
+        <div class="form-group">
+          <label>Color/Design</label>
+          <input type="text" id="f_cd" class="form-control" placeholder="e.g. Maple Wood" />
+        </div>
+      </div>
+      <div class="form-grid-3">
+        <div class="form-group">
+          <label>Thickness</label>
+          <input type="text" id="f_th" class="form-control" placeholder="e.g. 18mm" />
+        </div>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Size</label>
+          <input type="text" id="f_sz" class="form-control" placeholder="e.g. 4'×8'" />
+        </div>
+        <div class="form-group">
+          <label>Unit *</label>
+          <select id="f_un" class="form-control" required>
+            <option value="pcs">Pieces (pcs)</option>
+            <option value="meter">Meter (m)</option>
+            <option value="box">Box</option>
+            <option value="set">Set</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid-3">
+        <div class="form-group">
+          <label>Cost Price (₱)</label>
+          <input type="number" step="0.01" id="f_cp" class="form-control" placeholder="0.00" />
+        </div>
+        <div class="form-group">
+          <label>Selling Price (₱)</label>
+          <input type="number" step="0.01" id="f_sp" class="form-control" placeholder="0.00" />
+        </div>
+        <div class="form-group">
+          <label>Low-Stock Threshold</label>
+          <input type="number" id="f_tr" class="form-control" value="5" />
+        </div>
+      </div>
+      <div class="form-group" id="initRow">
+        <label>Initial Stock (pcs)</label>
+        <input type="number" id="f_is" class="form-control" value="0" />
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="close_('prodModal')">Cancel</button>
+        <button class="btn btn-primary" onclick="saveProduct()">💾 Save Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STOCK ADJUST MODAL -->
+  <div class="overlay" id="stkModal">
+    <div class="modal" style="max-width:380px;">
+      <div class="modal-header">
+        <div class="modal-title">Adjust Stock — <span id="stkName"></span></div>
+        <button class="modal-close" onclick="close_('stkModal')">✕</button>
+      </div>
+      <div class="form-grid-2">
+        <div class="form-group">
+          <label>Type</label>
+          <select id="adjType" class="form-control">
+            <option value="IN">Stock IN (Restock)</option>
+            <option value="OUT">Stock OUT</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Quantity (pcs)</label>
+          <input type="number" id="adjQty" class="form-control" min="1" placeholder="e.g. 20" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="close_('stkModal')">Cancel</button>
+        <button class="btn btn-success" onclick="applyStock()">✅ Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/mock.js"></script>
+  <script>
+    let products = window.db.getProducts();
+    let nextId = Math.max(...Object.keys(products).map(Number)) + 1;
+    let editId = null, stkId = null;
+
+    function fmt(n) { return '₱' + n.toLocaleString('en-PH', { minimumFractionDigits: 2 }); }
+
+    function renderTable() {
+      const q = document.getElementById('srch').value.toLowerCase();
+      const cf = document.getElementById('catF').value;
+      const sf = document.getElementById('stF').value;
+      const tbody = document.getElementById('tblBody');
+      tbody.innerHTML = '';
+      Object.entries(products).forEach(([id, p]) => {
+        const thr = p.thr || 5;
+        const st = p.stock <= thr ? 'Low' : p.stock <= thr * 2 ? 'Warning' : 'OK';
+        if (q && !p.name.toLowerCase().includes(q) && !(p.cd || '').toLowerCase().includes(q)) return;
+        if (cf && p.cat !== cf) return;
+        if (sf && st !== sf) return;
+        const badge = st === 'Low'
+          ? '<span class="badge b-low">LOW STOCK</span>'
+          : st === 'Warning'
+            ? '<span class="badge b-warn">WARNING</span>'
+            : '<span class="badge b-ok">OK</span>';
+        tbody.insertAdjacentHTML('beforeend', `
+      <tr data-st="${st}">
+        <td class="fw7">${p.name}</td>
+        <td>${p.cat}</td><td>${p.cd || '—'}</td><td>${p.th || '—'}</td><td>${p.sz || '—'}</td>
+        <td><span class="muted">${p.un || 'pcs'}</span></td>
+        <td>${p.stock}</td>
+        <td>${p.cost != null ? fmt(p.cost) : '—'}</td>
+        <td>${fmt(p.price)}</td>
+        <td>${badge}</td>
+        <td>
+          <button class="btn btn-ghost btn-sm" onclick="openEdit(${id})">✏️</button>
+          <button class="btn btn-warning btn-sm" onclick="openStock(${id})">📦</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteP(${id})">🗑</button>
+        </td>
+      </tr>`);
+      });
+    }
+
+    function openAdd() {
+      editId = null; document.getElementById('mTitle').textContent = 'Add Product';
+      ['f_bt', 'f_cd', 'f_th', 'f_sz', 'f_cp', 'f_sp'].forEach(x => document.getElementById(x).value = '');
+      document.getElementById('f_un').value = 'pcs';
+      document.getElementById('f_tr').value = '5'; document.getElementById('f_is').value = '0';
+      document.getElementById('initRow').style.display = '';
+      document.getElementById('f_new_cat').style.display = 'none';
+      document.getElementById('f_new_cat').value = '';
+      document.getElementById('prodModal').classList.add('open');
+    }
+
+    function openEdit(id) {
+      const p = products[id]; editId = id;
+      document.getElementById('mTitle').textContent = 'Edit Product';
+      document.getElementById('f_bt').value = p.name; document.getElementById('f_cat').value = p.cat;
+      document.getElementById('f_cd').value = p.cd || '';
+      document.getElementById('f_th').value = p.th || ''; document.getElementById('f_sz').value = p.sz || '';
+      document.getElementById('f_un').value = p.un || 'pcs';
+      document.getElementById('f_cp').value = p.cost || 0; document.getElementById('f_sp').value = p.price || 0;
+      document.getElementById('f_tr').value = p.thr || 5;
+      document.getElementById('initRow').style.display = 'none';
+      document.getElementById('f_new_cat').style.display = 'none';
+      document.getElementById('f_new_cat').value = '';
+      document.getElementById('prodModal').classList.add('open');
+    }
+
+    function saveProduct() {
+      const bt = document.getElementById('f_bt').value.trim();
+      if (!bt) { alert('Product name is required.'); return; }
+      let cat = document.getElementById('f_cat').value;
+      if (cat === 'new') {
+        cat = document.getElementById('f_new_cat').value.trim();
+        if (!cat) { alert('New category name is required.'); return; }
+        const sel = document.getElementById('f_cat');
+        const opt = document.createElement('option');
+        opt.value = cat; opt.textContent = cat;
+        sel.insertBefore(opt, sel.lastElementChild);
+        sel.value = cat;
+      }
+      const obj = {
+        name: bt, cat: cat, cd: document.getElementById('f_cd').value.trim(),
+        th: document.getElementById('f_th').value.trim(), sz: document.getElementById('f_sz').value.trim(),
+        un: document.getElementById('f_un').value,
+        cost: parseFloat(document.getElementById('f_cp').value) || 0,
+        price: parseFloat(document.getElementById('f_sp').value) || 0,
+        thr: parseInt(document.getElementById('f_tr').value) || 5
+      };
+      if (editId === null) { obj.stock = parseInt(document.getElementById('f_is').value) || 0; products[nextId++] = obj; }
+      else Object.assign(products[editId], obj);
+      window.db.saveProducts(products);
+      close_('prodModal'); renderTable(); showFlash(`"${bt}" saved.`);
+    }
+
+    function deleteP(id) { if (!confirm('Delete this product?')) return; delete products[id]; window.db.saveProducts(products); renderTable(); showFlash('Product deleted.'); }
+    function openStock(id) { stkId = id; document.getElementById('stkName').textContent = products[id].name; document.getElementById('adjQty').value = ''; document.getElementById('stkModal').classList.add('open'); }
+    function applyStock() {
+      const qty = parseInt(document.getElementById('adjQty').value); const t = document.getElementById('adjType').value;
+      if (!qty || qty < 1) { alert('Enter a valid quantity.'); return; }
+      const p = products[stkId]; p.stock += (t === 'IN' ? qty : -qty); if (p.stock < 0) p.stock = 0;
+      window.db.saveProducts(products);
+      close_('stkModal'); renderTable(); showFlash(`Stock ${t} ${qty} pcs applied.`);
+    }
+    function close_(id) { document.getElementById(id).classList.remove('open'); }
+    function showFlash(msg) { const el = document.getElementById('flash'); el.textContent = '✅ ' + msg; el.classList.remove('hidden'); setTimeout(() => el.classList.add('hidden'), 4000); }
+    document.querySelectorAll('.overlay').forEach(el => el.addEventListener('click', e => { if (e.target === el) close_(el.id); }));
+    document.getElementById('srch').addEventListener('input', renderTable);
+    document.getElementById('catF').addEventListener('change', renderTable);
+    document.getElementById('stF').addEventListener('change', renderTable);
+    // Auto-refresh stock when a sale is saved from another tab/page
+    window.addEventListener('storage', e => {
+      if (e.key === 'sb_products') { products = window.db.getProducts(); renderTable(); }
+    });
+    renderTable();
+  </script>
+</body>
+
+</html>

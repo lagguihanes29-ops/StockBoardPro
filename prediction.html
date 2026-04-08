@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Stock Prediction — StockBoard Pro</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <div class="layout">
+    <nav class="sidebar">
+      <div class="sidebar-brand">
+        <div class="company">🪵 StockBoard Pro</div>
+        <div class="tagline">Laminated Boards Dealer</div><span class="badge-role">Admin</span>
+      </div>
+      <div class="sidebar-nav">
+        <div class="nav-group-label">Overview</div>
+        <a href="dashboard.html" class="nav-link"><span class="icon">🏠</span><span>Dashboard</span></a>
+        <a href="inventory.html" class="nav-link"><span class="icon">📦</span><span>Inventory</span></a>
+        <div class="nav-group-label" style="margin-top:.5rem">Sales</div>
+        <a href="sales.html" class="nav-link"><span class="icon">🛒</span><span>Sales</span></a>
+        <div class="nav-group-label" style="margin-top:.5rem">Analytics</div>
+        <a href="reports.html" class="nav-link"><span class="icon">📊</span><span>Reports</span></a>
+        <a href="prediction.html" class="nav-link active"><span class="icon">🔮</span><span>Prediction</span></a>
+      </div>
+      <div class="sidebar-bottom">
+        <div class="user-row">
+          <div class="avatar">A</div>
+          <div class="user-details">
+            <div class="uname">Admin</div>
+            <div class="urole">Admin</div>
+          </div>
+        </div>
+        <a href="login.html" class="btn-signout" onclick="return confirm('Are you sure you want to log out?');">🚪 Sign
+          Out</a>
+      </div>
+    </nav>
+
+    <div class="main">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Stock Prediction</div>
+          <div class="topbar-sub">30-day moving average — estimated runout per board type</div>
+        </div>
+      </div>
+      <div class="page-body">
+
+        <!-- EXPLAINER -->
+        <div class="card mb-2" style="font-size:.84rem;line-height:1.75;">
+          <div class="card-title">🔮 Prediction Method — Moving Average</div>
+          <ol style="padding-left:1.4rem;margin-top:.3rem;">
+            <li><strong>Avg Daily Sales</strong> = Total Units Sold ÷ Training Days</li>
+            <li><strong>Days Remaining</strong> = Current Stock ÷ Avg Daily Sales</li>
+            <li><strong>Restock Qty</strong> = (Avg Daily Sales × 30) − Current Stock <em>(30-day buffer)</em></li>
+          </ol>
+          <p style="margin-top:.5rem;">
+            🔴 <strong>Critical</strong> ≤ 7 days &nbsp;|&nbsp;
+            🟡 <strong>Warning</strong> ≤ 14 days &nbsp;|&nbsp;
+            🟢 <strong>OK</strong> > 14 days
+          </p>
+        </div>
+
+        <!-- PERIOD & SEARCH -->
+        <div class="toolbar mb-2">
+          <div class="toolbar-left">
+            <label class="muted" style="font-size:.8rem;">Training period:</label>
+            <select id="daysSel" class="filter-sel" onchange="render()">
+              <option value="7">Last 7 days</option>
+              <option value="14">Last 14 days</option>
+              <option value="30" selected>Last 30 days</option>
+              <option value="60">Last 60 days</option>
+              <option value="90">Last 90 days</option>
+            </select>
+          </div>
+          <div class="toolbar-right">
+            <input type="text" id="predSrch" class="search-box" placeholder="🔍 Search board type…" />
+          </div>
+        </div>
+
+        <!-- PREDICTION TABLE -->
+        <div class="tbl-wrap">
+          <table id="predTbl">
+            <thead>
+              <tr>
+                <th>Board Code</th>
+                <th>Color/Design</th>
+                <th>Category</th>
+                <th>Thickness</th>
+                <th>Size</th>
+                <th>Avg Daily Sales</th>
+                <th>Current Stock</th>
+                <th>Days Remaining</th>
+                <th>Restock Qty</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="predBody"></tbody>
+          </table>
+        </div>
+
+        <!-- EXAMPLE CALC -->
+        <div class="card mt-2" style="font-size:.82rem;color:var(--text-muted);">
+          <div class="card-title">📐 Example Calculation (30-day period)</div>
+          <p><em>PETG High Gloss 18mm</em> — Current Stock: 18 pcs | Units Sold (30 days): 21</p>
+          <pre
+            style="margin:.5rem 0;padding:.7rem;background:var(--bg);border-radius:6px;font-size:.8rem;color:var(--text);overflow-x:auto;">
+Avg Daily Sales = 21 ÷ 30          = 0.70 pcs/day
+Days Remaining  = 18 ÷ 0.70        = 25.7 days  → OK 🟢
+Restock Qty     = (0.70 × 30) − 18 = 3 pcs recommended</pre>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="js/mock.js"></script>
+  <script>
+    function render() {
+      // Always read fresh from localStorage so new sales are reflected
+      const products = window.db.getProducts();
+      const sales = window.db.getSales();
+
+      const days = parseInt(document.getElementById('daysSel').value);
+      const q = document.getElementById('predSrch').value.toLowerCase();
+      const tbody = document.getElementById('predBody');
+      tbody.innerHTML = '';
+
+      const soldMap = {};
+      const today = new Date();                             // ← live today, not hardcoded
+      today.setHours(23, 59, 59, 999);
+      sales.forEach(s => {
+        const sDate = new Date(s.date);
+        const diffDays = Math.floor((today - sDate) / (1000 * 60 * 60 * 24));
+        if (diffDays <= days) {
+          const key = s.name + '||' + (s.cd || '');
+          soldMap[key] = (soldMap[key] || 0) + s.qty;
+        }
+      });
+
+      Object.entries(products).forEach(([, b]) => {
+        const label = b.name + (b.cd ? ' — ' + b.cd : '');
+        if (q && !label.toLowerCase().includes(q) && !b.cat.toLowerCase().includes(q)) return;
+        const key = b.name + '||' + (b.cd || '');
+        const sold = soldMap[key] || 0;
+        const avg = +(sold / days).toFixed(2);
+        const daysRem = avg > 0 ? +(b.stock / avg).toFixed(1) : null;
+        const restock = avg > 0 ? Math.max(0, Math.ceil(avg * 30 - b.stock)) : 0;
+
+        let risk, status;
+        if (daysRem === null) { risk = 'none'; status = '⚪ No recent sales'; }
+        else if (daysRem <= 7) { risk = 'critical'; status = `⚠️ Low stock in ${daysRem} days`; }
+        else if (daysRem <= 14) { risk = 'warning'; status = `🟡 Reorder soon (${daysRem} days)`; }
+        else { risk = 'ok'; status = `🟢 OK (${daysRem} days left)`; }
+
+        const rc = risk === 'critical' ? 'pred-crit' : risk === 'warning' ? 'pred-warn' : '';
+        const rQ = restock > 0
+          ? `<strong class="amber">${restock} pcs</strong>`
+          : `<span class="muted">Sufficient</span>`;
+
+        tbody.insertAdjacentHTML('beforeend', `
+      <tr class="${rc}" data-name="${label.toLowerCase()}">
+        <td class="fw7">${b.name}</td><td>${b.cd || '—'}</td><td>${b.cat}</td><td>${b.th}</td><td>${b.sz}</td>
+        <td>${avg} pcs/day</td>
+        <td>${b.stock}</td>
+        <td>${daysRem !== null ? daysRem + ' days' : '∞'}</td>
+        <td>${rQ}</td>
+        <td>${status}</td>
+      </tr>`);
+      });
+    }
+
+    document.getElementById('predSrch').addEventListener('input', render);
+    document.getElementById('daysSel').addEventListener('change', render);
+    // Auto-refresh when sales/inventory change in another tab
+    window.addEventListener('storage', e => { if (e.key === 'sb_sales' || e.key === 'sb_products') render(); });
+    render();
+  </script>
+</body>
+
+</html>
